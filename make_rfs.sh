@@ -140,7 +140,11 @@ deb http://ftp.debian.org/debian/ wheezy-updates main contrib" > ${DEBIAN_ROOTFS
     # Auto-login
     sed -i.orig -e 's/^#autologin-user=/autologin-user=aakash/g' ${DEBIAN_ROOTFS_DIR}/etc/lightdm/lightdm.conf
 
+    # Load modules
+    echo 8192cu >> ${DEBIAN_ROOTFS_DIR}/etc/modules
+    echo ft5x_ts >> ${DEBIAN_ROOTFS_DIR}/etc/modules
 
+    
     # Finally, unmount the rootfs
     ch-umount
     
