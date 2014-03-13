@@ -23,7 +23,7 @@ function install_deps() {
 
 function build_uboot() {
     echo "Cloning uboot..."
-    git clone -b ${UBOOT_BRANCH} ${UBOOT_SRC}
+    git clone -b ${UBOOT_BRANCH} ${UBOOT_SRC} --depth=1
     
     pushd uboot-allwinner
     
@@ -117,6 +117,8 @@ deb http://ftp.debian.org/debian/ wheezy-updates main contrib" > ${DEBIAN_ROOTFS
     echo "export LANGUAGE=en_US.UTF-8" >> ${DEBIAN_ROOTFS_DIR}/root/.bashrc
     echo "export LC_ALL=en_US.UTF-8" >> ${DEBIAN_ROOTFS_DIR}/root/.bashrc
     # chroot rootfs dpkg-reconfigure locales # No need to run this
+
+    echo "LANG=\"en_US.UTF-8\"" >> ${DEBIAN_ROOTFS_DIR}/etc/default/locale
     
     echo "Installing essentials utilities..."
     chroot ${DEBIAN_ROOTFS_DIR} apt-get install apt-utils dialog locales --force-yes -y
@@ -126,27 +128,49 @@ deb http://ftp.debian.org/debian/ wheezy-updates main contrib" > ${DEBIAN_ROOTFS
     chroot ${DEBIAN_ROOTFS_DIR} apt-get install ethtool florence alsa-utils hal wicd netsurf lxde-core xorg --force-yes -y
     chroot ${DEBIAN_ROOTFS_DIR} apt-get install lightdm network-manager --force-yes -y
 
-
     # Language to use[TODO]
-    # Encoding to use on the console[TOD]
+    # Encoding to use on the console[TODO]
 
-    
+    # Create user 'aakash', and assign permissions
+    chroot ${DEBIAN_ROOTFS_DIR} adduser aakash
+    chroot ${DEBIAN_ROOTFS_DIR} addgroup aakash adm # add 'aakash' to admin group
+    chroot ${DEBIAN_ROOTFS_DIR} addgroup aakash sudo # assign 'aakash' sudo rights
+    chroot ${DEBIAN_ROOTFS_DIR} addgroup aakash audio # Enable audio for aakash
+
+    # Auto-login
+    sed -i.orig -e 's/^#autologin-user=/autologin-user=aakash/g' ${DEBIAN_ROOTFS_DIR}/etc/lightdm/lightdm.conf
+
+
+    # Finally, unmount the rootfs
     ch-umount
     
 }
 
+function copy_modules() {
+    # Copy kernel modules to rootfs
+    if [ -d ${DEBIAN_ROOTFS_DIR}/lib/modules ];
+    then
+	cp -rv demo-sunxi/out/lib/modules/3.0.76+ ${DEBIAN_ROOTFS_URL}/lib/modules/
+    else
+	mkdir -p ${DEBIAN_ROOTFS_DIR}/lib/modules
+	cp -rv demo-sunxi/out/lib/modules/3.0.76+ ${DEBIAN_ROOTFS_URL}/lib/modules/
+    fi
 
+    # Download and copy wifi firmware
+    if [ -d ${DEBIAN_ROOTFS_DIR}/lib/firmware ];
+	wget -c http://mirrors.arizona.edu/raspbmc/downloads/bin/lib/wifi/rtlwifi/rtl8192cufw.bin \
+	    --directory-prefix=${DEBIAN_ROOTFS_DIR}/lib/firmware
+    else
+	mkdir -p ${DEBIAN_ROOTFS_DIR}/lib/firmware
+	wget -c http://mirrors.arizona.edu/raspbmc/downloads/bin/lib/wifi/rtlwifi/rtl8192cufw.bin \
+	    --directory-prefix=${DEBIAN_ROOTFS_DIR}/lib/firmware
+    fi
+}
 
 install_deps
 build_uboot
 build_kernel
 build_rootfs
 configure_rootfs
-
-
-
-
-
-
-
+copy_modules
 
