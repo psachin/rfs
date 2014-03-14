@@ -1,0 +1,5 @@
+- Set default language and encoding
+- Format SD-card(4/8Gig)
+- Copy uImage binary to 1st partition
+- Copy 'spl/sunxi-spl.bin' to SD-card
+- Copy 'u-boot.bin' to SD-card

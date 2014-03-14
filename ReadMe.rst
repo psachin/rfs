@@ -25,7 +25,7 @@ Usage
       http://emdebian.org/~thibg/repo/
 
 #. Login as **root** to run the script. DO NOT run it as 'sudo', some
-commands may not work. ::
+   commands may not work. ::
 
         bash ./make_rfs.sh
 
